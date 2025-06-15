@@ -166,3 +166,58 @@ If you find this model useful, please consider citing.
 ```
 ## Disclaimer
 Don't use this model to do bad things. Prompts are sourced from freely available data on the internet.
+
+# Chatterbox TTS API Server
+
+A FastAPI server for generating audio using ChatterboxTTS.
+
+## Setup
+
+1. Install dependencies:
+```
+pip install -e .
+```
+
+2. Make sure the audio prompt file exists at `./../OpenVoice/target000.wav`
+
+## Running the server
+
+Run the following command:
+```
+python server.py
+```
+
+The server will start at http://localhost:8000
+
+## API Endpoints
+
+### Generate Audio
+
+**Endpoint:** `POST /generate-audio`
+
+**Request Body:**
+```json
+{
+  "subtitle_text": "Text to be spoken",
+  "exaggeration": 0.5,
+  "cfg_weight": 0.5
+}
+```
+
+- `subtitle_text`: The text to be converted to speech (required)
+- `exaggeration`: Controls the expressiveness of the generated speech (default: 0.5)
+- `cfg_weight`: Controls the guidance scale (default: 0.5)
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Audio saved to cloned_audio.wav"
+}
+```
+
+## API Documentation
+
+Once the server is running, you can access the interactive API documentation at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc

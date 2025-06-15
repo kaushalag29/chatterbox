@@ -32,13 +32,15 @@ class TTSRequest(BaseModel):
 @app.post("/generate-audio")
 async def generate_audio(request: TTSRequest):
     try:
+        print(f"Generating audio for subtitle - {request.subtitle_text}, exaggeration - {request.exaggeration}, cfg_weight - {request.cfg_weight}")
         # Fixed audio prompt path
         audio_prompt_path = "./../OpenVoice/target000.wav"
         
         # Check if the audio prompt file exists
         if not os.path.exists(audio_prompt_path):
             raise HTTPException(status_code=400, detail=f"Audio prompt file not found at {audio_prompt_path}")
-        
+        print(f"Audio prompt file found at {audio_prompt_path}")
+
         # Generate audio
         wav = model.generate(
             request.subtitle_text,
@@ -48,7 +50,8 @@ async def generate_audio(request: TTSRequest):
         )
         
         # Save the generated audio
-        output_path = "cloned_audio.wav"
+        output_path = "./../OpenVoice/cloned_audio.wav"
+        print(f"Saving audio to {output_path}")
         ta.save(output_path, wav, model.sr)
         
         return {"status": "success", "message": f"Audio saved to {output_path}"}

@@ -4,11 +4,17 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from chatterbox.tts import ChatterboxTTS
 import os
+import logging
 
 app = FastAPI(title="Chatterbox TTS API")
 
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Detect device (Mac with M1/M2/M3/M4)
 device = "mps" if torch.backends.mps.is_available() else "cpu"
+logger.info(f"Using device: {device}")
 map_location = torch.device(device)
 
 # Patch torch.load to use the correct device
@@ -32,14 +38,15 @@ class TTSRequest(BaseModel):
 @app.post("/generate-audio")
 async def generate_audio(request: TTSRequest):
     try:
-        print(f"Generating audio for subtitle - {request.subtitle_text}, exaggeration - {request.exaggeration}, cfg_weight - {request.cfg_weight}")
+        logger.info(f"Generating audio for subtitle - {request.subtitle_text}, exaggeration - {request.exaggeration}, cfg_weight - {request.cfg_weight}")
         # Fixed audio prompt path
         audio_prompt_path = "./../OpenVoice/target000.wav"
         
         # Check if the audio prompt file exists
         if not os.path.exists(audio_prompt_path):
+            logger.error(f"Audio prompt file not found at {audio_prompt_path}")
             raise HTTPException(status_code=400, detail=f"Audio prompt file not found at {audio_prompt_path}")
-        print(f"Audio prompt file found at {audio_prompt_path}")
+        logger.info(f"Audio prompt file found at {audio_prompt_path}")
 
         # Generate audio
         wav = model.generate(
@@ -51,12 +58,13 @@ async def generate_audio(request: TTSRequest):
         
         # Save the generated audio
         output_path = "./../OpenVoice/cloned_audio.wav"
-        print(f"Saving audio to {output_path}")
+        logger.info(f"Saving audio to {output_path}")
         ta.save(output_path, wav, model.sr)
         
         return {"status": "success", "message": f"Audio saved to {output_path}"}
     
     except Exception as e:
+        logger.error(f"Error generating audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
 
 if __name__ == "__main__":

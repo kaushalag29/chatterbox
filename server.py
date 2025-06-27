@@ -35,6 +35,11 @@ class TTSRequest(BaseModel):
     exaggeration: float = 0.5
     cfg_weight: float = 0.5
 
+class BaseTTSRequest(BaseModel):
+    subtitle_text: str
+    exaggeration: float = 0.5
+    cfg_weight: float = 0.5
+
 @app.post("/generate-audio")
 async def generate_audio(request: TTSRequest):
     try:
@@ -66,6 +71,29 @@ async def generate_audio(request: TTSRequest):
     except Exception as e:
         logger.error(f"Error generating audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
+
+@app.post("/generate-base-audio")
+async def generate_base_audio(request: BaseTTSRequest):
+    try:
+        logger.info(f"Generating base audio for subtitle - {request.subtitle_text}")
+        
+        # Generate audio without audio_prompt
+        wav = model.generate(
+            request.subtitle_text,
+            exaggeration=request.exaggeration,
+            cfg_weight=request.cfg_weight
+        )
+        
+        # Save the generated audio to a specific path for VocalStorm
+        output_path = "./../OpenVoice/vocalstorm_base_audio.wav"
+        logger.info(f"Saving base audio to {output_path}")
+        ta.save(output_path, wav, model.sr)
+        
+        return {"status": "success", "message": f"Base audio saved to {output_path}"}
+    
+    except Exception as e:
+        logger.error(f"Error generating base audio: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error generating base audio: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

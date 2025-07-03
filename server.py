@@ -72,6 +72,12 @@ async def generate_audio(request: TTSRequest):
         logger.error(f"Error generating audio: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error generating audio: {str(e)}")
 
+@app.post("/shutdown")
+async def shutdown():
+    logger.info("Shutdown request received")
+    os._exit(0)
+    return {"status": "shutdown", "message": "Server shutting down"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 

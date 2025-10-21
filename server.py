@@ -2,7 +2,7 @@ import torch
 import torchaudio as ta
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from chatterbox.tts import ChatterboxTTS
+from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 import os
 import logging
 
@@ -26,16 +26,13 @@ def patched_torch_load(*args, **kwargs):
 
 torch.load = patched_torch_load
 
-# Load model at startup
-model = ChatterboxTTS.from_pretrained(device=device)
+# Load Multilingual model only (supports all 23 languages including English)
+logger.info("Loading ChatterboxMultilingualTTS model...")
+model = ChatterboxMultilingualTTS.from_pretrained(device=device)
+logger.info("Multilingual model loaded successfully")
 
 # Define request model
 class TTSRequest(BaseModel):
-    subtitle_text: str
-    exaggeration: float = 0.5
-    cfg_weight: float = 0.5
-
-class BaseTTSRequest(BaseModel):
     subtitle_text: str
     exaggeration: float = 0.5
     cfg_weight: float = 0.5
@@ -53,10 +50,12 @@ async def generate_audio(request: TTSRequest):
             raise HTTPException(status_code=400, detail=f"Audio prompt file not found at {audio_prompt_path}")
         logger.info(f"Audio prompt file found at {audio_prompt_path}")
 
-        # Generate audio
+        # Use multilingual model for all languages (including English)
+        logger.info(f"Using ChatterboxMultilingualTTS model for language: {request.language_id}")
         wav = model.generate(
             request.subtitle_text,
             audio_prompt_path=audio_prompt_path,
+            language_id=request.language_id,
             exaggeration=request.exaggeration,
             cfg_weight=request.cfg_weight
         )

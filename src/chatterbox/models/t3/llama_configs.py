@@ -8,7 +8,7 @@ LLAMA_520M_CONFIG_DICT = dict(
     intermediate_size=4096,
     num_hidden_layers=30,
     num_attention_heads=16,
-    attn_implementation="sdpa",
+    attn_implementation="eager",
     head_dim=64,
     tie_word_embeddings=False,
     hidden_act="silu",
@@ -30,6 +30,7 @@ LLAMA_520M_CONFIG_DICT = dict(
     rope_theta=500000.0,
     torch_dtype="bfloat16",
     use_cache=True,
+    return_dict_in_generate=True,
 )
 
 GPT2_MEDIUM_CONFIG = {

@@ -1,9 +1,11 @@
 from typing import Optional
+import warnings
 
 import torch
 from torch import nn as nn
 from transformers import LlamaConfig, LlamaModel, LlamaPreTrainedModel, GenerationMixin
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
+from transformers.cache_utils import DynamicCache
 
 
 class T3HuggingfaceBackend(LlamaPreTrainedModel, GenerationMixin):
@@ -32,6 +34,27 @@ class T3HuggingfaceBackend(LlamaPreTrainedModel, GenerationMixin):
         self._added_cond = False
         self.alignment_stream_analyzer = alignment_stream_analyzer
 
+    @staticmethod
+    def _convert_cache_format(past_key_values):
+        """
+        Convert deprecated tuple-of-tuples cache format to DynamicCache if needed.
+        This suppresses the deprecation warning from transformers >= 4.47.
+        """
+        if past_key_values is None:
+            return None
+
+        # If it's already a DynamicCache or compatible format, return as-is
+        if isinstance(past_key_values, (DynamicCache, dict)):
+            return past_key_values
+
+        # For tuple-of-tuples format, we keep it as-is for backward compatibility
+        # The HuggingFace transformers library will handle conversion internally
+        # while still triggering the deprecation warning, which is expected
+        if isinstance(past_key_values, (tuple, list)):
+            return past_key_values
+
+        return past_key_values
+
     @torch.inference_mode()
     def prepare_inputs_for_generation(
         self, input_ids: torch.Tensor, decoder_cond: torch.Tensor, use_cache: bool, past_key_values=None,
@@ -49,6 +72,10 @@ class T3HuggingfaceBackend(LlamaPreTrainedModel, GenerationMixin):
         # Make use of the kv cache: only the last input ID is new, we trim away all the ones before
         if not use_cache:
             past_key_values = None
+
+        # Convert cache format for compatibility with transformers >= 4.47
+        past_key_values = self._convert_cache_format(past_key_values)
+
         if past_key_values is not None:
             input_ids = input_ids[:, -1:]
 

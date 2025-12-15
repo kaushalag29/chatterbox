@@ -136,8 +136,12 @@ class AlignmentStreamAnalyzer:
         long_tail = self.complete and (A[self.completed_at:, -3:].sum(dim=0).max() >= 5) # 200ms
 
         # If there are activations in previous tokens after generation has completed, assume this is a repetition error.
-        alignment_repetition = self.complete and (A[self.completed_at:, :-5].max(dim=1).values.sum() > 5)
-        
+        alignment_repetition = False
+        if self.complete:
+            sliced_A = A[self.completed_at:, :-5]
+            if sliced_A.shape[1] > 0:  # Ensure the dimension is not empty before max()
+                alignment_repetition = sliced_A.max(dim=1).values.sum() > 5
+    
         # Track generated tokens for repetition detection
         if next_token is not None:
             # Convert tensor to scalar if needed

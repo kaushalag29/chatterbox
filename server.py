@@ -183,6 +183,6 @@ async def shutdown():
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("PORT", 8003))
+    port = int(os.environ.get("PORT", 8000))
     logger.info(f"Starting ChatterBox TTS server on port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port) 
